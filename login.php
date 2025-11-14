@@ -1,44 +1,57 @@
 <?php
+// Разрешаем доступ к файлу и импортируем функции
 define('IN_APP', true);
 require_once 'utils/functions.php';
 
+// Проверяем наличие авторизации
 if (is_logged_in()) {
     header('Location: profile.php');
     exit;
 }
 
+// Обьявляем переменные
 $ip = $_SERVER['REMOTE_ADDR'];
 $error = '';
 
+// Если метод ПОСТ, то выполняем код авторизации
 if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+    // Проверяем валидность CSRF токена и брутфорса
     if ( !validate_csrf($_POST['csrf'] ?? '') ) {
         $error = 'Ошибка безопасности (CSRF)';
     } elseif ( !check_bruteforce($pdo, $ip) ) {
         $error = "Слишком много попыток. Подождите 5 минут.";
     } else {
+        // Получаем данные из формы
         $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
         $pass  = $_POST['password'] ?? '';
 
+        // Проверяем наличие данных в полях
         if ( !$email || !$pass ) {
             $error = "Заполните все поля";
             increment_bruteforce($pdo, $ip);
         } else {
+            // Получаем данные из БД
             $stmt = $pdo->prepare("SELECT id, password FROM users WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
 
+            // Сверяем данные из БД и формы
             if ( $user && password_verify($pass, $user['password']) ) {
+                // Очищаем попытки входа и пересоздаём сессию
                 clear_bruteforce($pdo, $ip);
                 session_regenerate_id(true);
 
+                // Заполняем сессию
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_email'] = $email;
                 $_SESSION['last_activity'] = time();
 
+                // Убираем CSRF токен и переходим в профиль
                 unset($_SESSION['csrf_token']);
                 header('Location: profile.php');
                 exit;
             } else {
+                // Засчитываем попытку входа и выдаём ошибку
                 increment_bruteforce($pdo, $ip);
                 $error = "Неверный email или пароль";
                 sleep(2);
