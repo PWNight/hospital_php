@@ -1,8 +1,10 @@
 <?php
+// Блокируем доступ при неавторизованном запросе
 if (!defined('IN_APP')) {
     die('Direct access not permitted');
 }
 
+// Обьявляем переменные данных от базы
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'hospital');
 define('DB_USER', 'rodion');
@@ -10,7 +12,7 @@ define('DB_PASS', 'rodion');
 define('SITE_URL', 'http://localhost:8000');
 define('SESSION_LIFETIME', 3600 * 24 * 30);
 
-// Регистрация соединения с БД
+// Регистрируем соединение с базой
 try {
     $pdo = new PDO(
         "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
@@ -48,6 +50,7 @@ function secure_session_start() {
 
     session_start();
 
+    // Если сессия не инициализирована, то инициализируем, иначе просто обновляем
     if (!isset($_SESSION['initiated'])) {
         session_regenerate_id(true);
         $_SESSION['initiated'] = true;

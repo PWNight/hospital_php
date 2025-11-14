@@ -1,38 +1,49 @@
 <?php
+// Разрешаем доступ к файлу и импортируем функции
 define('IN_APP', true);
 require_once 'utils/functions.php';
 
+// Проверяем наличие авторизации
 if (is_logged_in()) {
     header('Location: profile.php');
     exit;
 }
 
+// Обьявляем переменные
 $error = $success = '';
 
+// Если метод ПОСТ, то выполняем код авторизации
 if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+    // Проверяем валидность CSRF токена
     if ( !validate_csrf($_POST['csrf'] ?? '') ) {
         $error = 'CSRF токен недействителен';
     } else {
+        // Получаем данные из формы
         $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
         $pass  = $_POST['password'] ?? '';
 
+        // Проверяем валидность полей
         if ( !$email ) {
             $error = "Некорректный email";
         } elseif (strlen($pass) < 8) {
             $error = "Пароль должен быть не менее 8 символов";
         } else {
+            // Получаем email из БД и проверяем на дубликат
             $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
             $stmt->execute([$email]);
             if ( $stmt->fetch() ) {
                 $error = "Этот email уже зарегистрирован";
             } else {
+                // Хешируем пароль
                 $hash = password_hash($pass, PASSWORD_ARGON2ID);
 
+                // Создаём новую учётку
                 $stmt = $pdo->prepare("INSERT INTO users (email, password, created_at) VALUES (?, ?, NOW())");
                 $stmt->execute([$email, $hash]);
 
-                $success = "Регистрация успешна! Теперь вы можете войти.";
-                unset($_SESSION['csrf_token']);
+                // Переносим на страницу авторизации
+                header('Location: login.php');
+                exit;
             }
         }
     }

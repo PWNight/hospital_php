@@ -1,10 +1,12 @@
 <?php
+// Блокируем доступ при неавторизованном запросе
 if (!defined('IN_APP')) {
-    die('Access denied');
+    die('Direct access not permitted');
 }
-
+// Импортируем функции из конфига
 require_once 'config.php';
 
+// Если сессия отсутствует, то запускаем
 if ( session_status() === PHP_SESSION_NONE ) {
     secure_session_start();
 }
