@@ -25,7 +25,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
         $pass  = $_POST['password'] ?? '';
 
-        // Проверяем наличие данных в полях
+        // Проверяем валидность полей
         if ( !$email || !$pass ) {
             $error = "Заполните все поля";
             increment_bruteforce($pdo, $ip);

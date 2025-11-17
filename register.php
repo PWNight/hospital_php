@@ -18,6 +18,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
     if ( !validate_csrf($_POST['csrf'] ?? '') ) {
         $error = 'CSRF токен недействителен';
     } else {
+        // TODO: Обновить логику валидации и добавления записи
         // Получаем данные из формы
         $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
         $pass  = $_POST['password'] ?? '';
@@ -58,24 +59,88 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {font-family: Arial; max-width: 400px; margin: 50px auto; padding: 20px; background: #f4f4f4;}
-        input, button {width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box;}
+        input, button, select {width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box;}
         button {background: #28a745; color: white; border: none; cursor: pointer;}
         button:hover {background: #218838;}
-        .error {color: #d9534f; background: #f2dede; padding: 10px; border-radius: 4px;}
-        .success {color: #155724; background: #d4edda; padding: 10px; border-radius: 4px;}
+        .error {color: #d9534f; background: #f2dede; padding: 10px; margin: 8px 0; border-radius: 4px;}
     </style>
 </head>
 <body>
     <h2>Регистрация</h2>
     <?php if ( $error ) echo "<div class='error'>$error</div>"; ?>
-    <?php if ( $success ) echo "<div class='success'>$success</div>"; ?>
-
-    <form method="POST" novalidate>
+    <form method="POST">
         <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-        <p><input type="email" name="email" placeholder="Email" required autofocus></p>
-        <p><input type="password" name="password" placeholder="Пароль (мин. 8 символов)" minlength="8" required></p>
+        <div>
+            <label for="email">Введите почту</label>
+            <input type="email" name="email" id="email" autocomplete="email" placeholder="Email" required autofocus>
+        </div>
+        <div>
+            <label for="password">Введите пароль</label>
+            <input type="password" name="password" id="password" placeholder="Пароль (мин. 8 символов)" minlength="8" required>
+        </div>
+        <div>
+            <label for="type">Выберите тип аккаунта</label>
+            <select id="type" name="type">
+                    <option selected disabled>Выберите тип аккаунта</option>
+                    <option value="doctor">Врач</option>
+                    <option value="patient">Пациент</option>
+            </select>
+        </div>
+        <div id="patient-form" style="display:none;">
+            <div>
+                <label for="pat_full_name">Введите ФИО</label>
+                <input name="full_name" id="pat_full_name" minlength="8" required>
+            </div>
+            <div>
+                <label for="birth_date">Введите дату рождения</label>
+                <input type="date" name="birth_date" id="birth_date" required>
+            </div>
+            <div>
+                <label for="home_address">Введите домашний адрес</label>
+                <input name="home_address" id="home_address" minlength="8" required>
+            </div>
+            <div>
+                <label for="pat_phone_number">Введите номер телефона</label>
+                <input type="tel" name="phone_number" id="pat_phone_number" minlength="8" required>
+            </div>
+        </div>
+        <div id="doctor-form" style="display:none;">
+            <div>
+                <label for="doc_full_name">Введите ФИО</label>
+                <input name="full_name" id="doc_full_name" minlength="8" required>
+            </div>
+            <div>
+                <label for="department">Выберите отдел</label>
+                <select id="department">
+                    <?php
+                        //TODO: Вставить получение списка отделов
+                    ?>
+                </select>
+            </div>
+            <div>
+                <label for="position">Введите должность</label>
+                <input name="position" id="position" minlength="8" required>
+            </div>
+            <div>
+                <label for="doc_phone_number">Введите номер телефона</label>
+                <input type="tel" name="phone_number" id="doc_phone_number" minlength="8" required>
+            </div>
+        </div>
         <button type="submit">Зарегистрироваться</button>
     </form>
-    <p><a href="login.php">Уже есть аккаунт? Войти</a></p>
+    <a href="login.php">Уже есть аккаунт? Войти</a>
+    <script>
+        const select = document.getElementById("type")
+        select.addEventListener("change", function (){
+            var value = this.value;
+            if(value == "doctor"){
+                document.getElementById("doctor-form").style = "display:block;"
+                document.getElementById("patient-form").style = "display:none;"
+            }else{
+                document.getElementById("patient-form").style = "display:block;"
+                document.getElementById("doctor-form").style = "display:none;"
+            }
+        });
+    </script>
 </body>
 </html>
