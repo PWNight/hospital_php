@@ -22,10 +22,13 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         // Получаем данные из формы
         $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
         $pass  = $_POST['password'] ?? '';
+        $account_type = $_POST['type'] ?? '';
 
         // Проверяем валидность полей
         if ( !$email ) {
             $error = "Некорректный email";
+        } elseif ( !$account_type ){
+            $error = "Не выбран тип аккаунта";
         } elseif (strlen($pass) < 8) {
             $error = "Пароль должен быть не менее 8 символов";
         } else {
@@ -38,13 +41,58 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
                 // Хешируем пароль
                 $hash = password_hash($pass, PASSWORD_ARGON2ID);
 
-                // Создаём новую учётку
-                $stmt = $pdo->prepare("INSERT INTO users (email, password, created_at) VALUES (?, ?, NOW())");
-                $stmt->execute([$email, $hash]);
+                switch ($account_type) {
+                    case "doctor":
+                        $department = $_POST['department'] ?? '';
+                        $full_name = $_POST['doc_full_name'] ?? '';
+                        $position = $_POST['position'] ?? '';
+                        $phone_number = $_POST['doc_phone_number'] ?? '';
 
-                // Переносим на страницу авторизации
-                header('Location: login.php');
-                exit;
+                        if ( !$department || !$full_name || !$position || !$phone_number ) {
+                            $error = 'Указаны не все данные врача';
+                        }else{
+                            // Создаём новую учётку
+                            $stmt = $pdo->prepare("INSERT INTO users (email, password, created_at, type) VALUES (?, ?, NOW(), ?)");
+                            $stmt->execute([$email, $hash, $account_type]);
+                            $user_id = $pdo->lastInsertId();
+
+                            // Создаём запись врача
+                            $stmt = $pdo->prepare("
+                                INSERT INTO doctors (fk_user, fk_department, full_name, position,
+                                email, phone_number) VALUES (?, ?, ?, ?, ?, ?)");
+                            $stmt->execute([$user_id, $department, $full_name, $position, $email, $phone_number]);
+
+                            // Переносим на страницу авторизации
+                            header('Location: login.php');
+                            exit;
+                        }
+                        break;
+                    case "patient":
+                        $full_name = $_POST['pat_full_name'] ?? '';
+                        $birth_date = $_POST['birth_date'] ?? '';
+                        $home_address = $_POST['home_address'] ?? '';
+                        $phone_number = $_POST['pat_phone_number'] ?? '';
+
+                        if ( !$full_name || !$birth_date || !$home_address || !$phone_number ) {
+                            $error = 'Указаны не все данные пациента';
+                        }else{
+                            // Создаём новую учётку
+                            $stmt = $pdo->prepare("INSERT INTO users (email, password, created_at, type) VALUES (?, ?, NOW(), ?)");
+                            $stmt->execute([$email, $hash, $account_type]);
+                            $user_id = $pdo->lastInsertId();
+
+                            // Создаём запись пациента
+                            $stmt = $pdo->prepare("
+                                INSERT INTO patients (fk_user, full_name, birth_date, home_address,
+                                email, phone_number) VALUES (?, ?, ?, ?, ?, ?)");
+                            $stmt->execute([$user_id, $full_name, $birth_date, $home_address, $email, $phone_number]);
+
+                            // Переносим на страницу авторизации
+                            header('Location: login.php');
+                            exit;
+                        }
+                        break;
+                }
             }
         }
     }
@@ -68,7 +116,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 <body>
     <h2>Регистрация</h2>
     <?php if ( $error ) echo "<div class='error'>$error</div>"; ?>
-    <form method="POST">
+    <form method="POST" novalidate>
         <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
         <div>
             <label for="email">Введите почту</label>
@@ -89,7 +137,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         <div id="patient-form" style="display:none;">
             <div>
                 <label for="pat_full_name">Введите ФИО</label>
-                <input name="full_name" id="pat_full_name" minlength="8" required>
+                <input name="pat_full_name" id="pat_full_name" minlength="8" required>
             </div>
             <div>
                 <label for="birth_date">Введите дату рождения</label>
@@ -101,19 +149,26 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
             </div>
             <div>
                 <label for="pat_phone_number">Введите номер телефона</label>
-                <input type="tel" name="phone_number" id="pat_phone_number" minlength="8" required>
+                <input type="tel" name="pat_phone_number" id="pat_phone_number" minlength="8" required>
             </div>
         </div>
         <div id="doctor-form" style="display:none;">
             <div>
                 <label for="doc_full_name">Введите ФИО</label>
-                <input name="full_name" id="doc_full_name" minlength="8" required>
+                <input name="doc_full_name" id="doc_full_name" minlength="8" required>
             </div>
             <div>
                 <label for="department">Выберите отдел</label>
-                <select id="department">
+                <select id="department" name="department">
+                    <option selected disabled>Выберите отделение</option>
                     <?php
-                        //TODO: Вставить получение списка отделов
+                        // Получаем список отделений
+                        $stmt = $pdo->prepare("SELECT id, name FROM departments");
+                        $stmt->execute();
+                        $departments = $stmt->fetchAll();
+                        foreach( $departments as $department ) {
+                            echo "<option value='".$department['id']."'>".$department["name"]."</option>";
+                        }
                     ?>
                 </select>
             </div>
@@ -123,7 +178,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
             </div>
             <div>
                 <label for="doc_phone_number">Введите номер телефона</label>
-                <input type="tel" name="phone_number" id="doc_phone_number" minlength="8" required>
+                <input type="tel" name="doc_phone_number" id="doc_phone_number" minlength="8" required>
             </div>
         </div>
         <button type="submit">Зарегистрироваться</button>
