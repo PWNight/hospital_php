@@ -18,7 +18,6 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
     if ( !validate_csrf($_POST['csrf'] ?? '') ) {
         $error = 'CSRF токен недействителен';
     } else {
-        // TODO: Обновить логику валидации и добавления записи
         // Получаем данные из формы
         $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
         $pass  = $_POST['password'] ?? '';
@@ -43,6 +42,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 
                 switch ($account_type) {
                     case "doctor":
+                        // Получаем данные из формы
                         $department = $_POST['department'] ?? '';
                         $full_name = $_POST['doc_full_name'] ?? '';
                         $position = $_POST['position'] ?? '';
@@ -68,6 +68,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
                         }
                         break;
                     case "patient":
+                        // Получаем данные из формы
                         $full_name = $_POST['pat_full_name'] ?? '';
                         $birth_date = $_POST['birth_date'] ?? '';
                         $home_address = $_POST['home_address'] ?? '';
