@@ -65,7 +65,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Вход в Личный кабинет</title>
+    <title>Вход в личный кабинет</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         /* Обновленные стили для профессионального вида */
@@ -81,7 +81,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
     </style>
 </head>
 <body>
-    <h2>Вход в личный кабинет МЦ "Надежда"</h2>
+    <h2>Вход в личный кабинет</h2>
     <?php if ($error) echo "<div class='error'>$error</div>"; ?>
 
     <form method="POST" novalidate>

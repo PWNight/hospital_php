@@ -106,12 +106,45 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
     <meta charset="UTF-8">
     <title>Регистрация</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body {font-family: Arial; max-width: 400px; margin: 50px auto; padding: 20px; background: #f4f4f4;}
-        input, button, select {width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box;}
-        button {background: #28a745; color: white; border: none; cursor: pointer;}
-        button:hover {background: #218838;}
-        .error {color: #d9534f; background: #f2dede; padding: 10px; margin: 8px 0; border-radius: 4px;}
+<style>
+        /* Общие стили */
+        body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f4f7f9; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);}
+        h2 {color: #17a2b8; text-align: center; margin-bottom: 25px;} /* Медицинский синий */
+        
+        /* Элементы формы */
+        input, select {
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0 15px 0; 
+            box-sizing: border-box; 
+            border: 1px solid #ced4da; 
+            border-radius: 4px;
+        }
+        button {
+            width: 100%; 
+            padding: 12px; 
+            margin: 15px 0 8px 0;
+            background: #17a2b8; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: bold;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        button:hover {background: #138496;}
+
+        /* Уведомления */
+        .error {color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb; margin-bottom: 15px;}
+        .success {color: #28a745; background: #d4edda; padding: 10px; border-radius: 4px; border: 1px solid #c3e6cb; margin-bottom: 15px;}
+        
+        /* Ссылки */
+        a {color: #17a2b8; text-decoration: none; display: block; text-align: center; margin-top: 10px;}
+        a:hover {text-decoration: underline;}
+
+        /* Специфические секции */
+        .form-section {padding: 15px; border: 1px dashed #ced4da; border-radius: 4px; margin-top: 15px; background: #ffffff;}
+        .form-section h3 {color: #6c757d; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 15px;}
     </style>
 </head>
 <body>
