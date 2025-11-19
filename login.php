@@ -65,26 +65,38 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Вход</title>
+    <title>Вход в Личный кабинет</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body {font-family: Arial; max-width: 400px; margin: 50px auto; padding: 20px; background: #f4f4f4;}
-        input, button {width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box;}
-        button {background: #007cba; color: white; border: none; cursor: pointer;}
-        button:hover {background: #005a87;}
-        .error {color: #d9534f; background: #f2dede; padding: 10px; border-radius: 4px;}
+        /* Обновленные стили для профессионального вида */
+        body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; background: #f4f7f9; border: 1px solid #dee2e6; border-radius: 8px;}
+        h2 {color: #17a2b8; text-align: center; margin-bottom: 25px;} /* Медицинский синий */
+        input, button {width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ced4da; border-radius: 4px;}
+        button {background: #17a2b8; color: white; border: none; cursor: pointer; font-weight: bold;}
+        button:hover {background: #138496;}
+        .error {color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb; margin-bottom: 15px;}
+        a {color: #17a2b8; text-decoration: none; display: block; text-align: center; margin-top: 15px;}
+        a:hover {text-decoration: underline;}
+        .links{display: flex; align-items: center; justify-content: space-between;}
     </style>
 </head>
 <body>
-    <h2>Вход в систему</h2>
+    <h2>Вход в личный кабинет МЦ "Надежда"</h2>
     <?php if ($error) echo "<div class='error'>$error</div>"; ?>
 
     <form method="POST" novalidate>
         <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-        <p><input type="email" name="email" placeholder="Email" required autofocus></p>
-        <p><input type="password" name="password" placeholder="Пароль" required></p>
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" placeholder="Введите ваш email" required>
+
+        <label for="password">Пароль</label>
+        <input type="password" name="password" id="password" placeholder="Введите ваш пароль" required>
+
         <button type="submit">Войти</button>
     </form>
-    <p><a href="register.php">Нет аккаунта? Зарегистрироваться</a></p>
+    <div class="links">
+        <a href="index.php">← На главную</a>
+        <a href="register.php">Нет аккаунта? Зарегистрироваться</a>
+    </div>
 </body>
 </html>
