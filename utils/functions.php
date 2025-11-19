@@ -13,7 +13,7 @@ if ( session_status() === PHP_SESSION_NONE ) {
 
 // Генерация CSRF токена
 function csrf_token() {
-    if ( empty($_SESSION['csrf_token']) ) {
+    if ( !isset($_SESSION['csrf_token']) ) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         $_SESSION['csrf_token_time'] = time();
     }

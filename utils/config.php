@@ -38,11 +38,9 @@ function secure_session_start() {
     ini_set('session.cookie_secure', 0);
     ini_set('session.cookie_samesite', 'Strict');
 
-    $host = parse_url(SITE_URL, PHP_URL_HOST);
     session_set_cookie_params([
         'lifetime' => SESSION_LIFETIME,
         'path'     => '/',
-        'domain'   => $host,
         'secure'   => false,
         'httponly' => true,
         'samesite' => 'Strict'
