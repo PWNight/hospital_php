@@ -10,6 +10,7 @@ if (is_logged_in()) {
 }
 
 // Обьявляем переменные
+global $pdo; // Убедимся, что $pdo доступен
 $ip = $_SERVER['REMOTE_ADDR'];
 $error = '';
 
@@ -19,7 +20,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
     if ( !validate_csrf($_POST['csrf'] ?? '') ) {
         $error = 'Ошибка безопасности (CSRF)';
     } elseif ( !check_bruteforce($pdo, $ip) ) {
-        $error = "Слишком много попыток. Подождите 5 минут.";
+        $error = "Слишком много попыток входа. Подождите 5 минут.";
     } else {
         // Получаем данные из формы
         $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
@@ -37,66 +38,104 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
 
             // Сверяем данные из БД и формы
             if ( $user && password_verify($pass, $user['password']) ) {
-                // Очищаем попытки входа и пересоздаём сессию
+                // Успешный вход
                 clear_bruteforce($pdo, $ip);
-                session_regenerate_id(true);
-
-                // Заполняем сессию
                 $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_email'] = $email;
                 $_SESSION['last_activity'] = time();
 
-                // Убираем CSRF токен и переходим в профиль
-                unset($_SESSION['csrf_token']);
                 header('Location: profile.php');
                 exit;
             } else {
-                // Засчитываем попытку входа и выдаём ошибку
-                increment_bruteforce($pdo, $ip);
+                // Неудачный вход
                 $error = "Неверный email или пароль";
-                sleep(2);
+                increment_bruteforce($pdo, $ip);
             }
         }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Вход в личный кабинет</title>
+    <title>Вход - Медицинский центр</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
-        /* Обновленные стили для профессионального вида */
-        body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; background: #f4f7f9; border: 1px solid #dee2e6; border-radius: 8px;}
-        h2 {color: #17a2b8; text-align: center; margin-bottom: 25px;} /* Медицинский синий */
-        input, button {width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ced4da; border-radius: 4px;}
-        button {background: #17a2b8; color: white; border: none; cursor: pointer; font-weight: bold;}
-        button:hover {background: #138496;}
-        .error {color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb; margin-bottom: 15px;}
-        a {color: #17a2b8; text-decoration: none; display: block; text-align: center; margin-top: 15px;}
-        a:hover {text-decoration: underline;}
-        .links{display: flex; align-items: center; justify-content: space-between;}
+        /* Минималистичный белый/синий дизайн */
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        .form-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.05);
+        }
+        h2 {
+            color: #007BFF;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 300;
+        }
+        label {
+            font-weight: 500;
+        }
+        .btn-primary {
+            background-color: #007BFF;
+            border-color: #007BFF;
+            color: white;
+            padding: 12px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        a {
+            color: #007BFF;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
-    <h2>Вход в личный кабинет</h2>
-    <?php if ($error) echo "<div class='error'>$error</div>"; ?>
+    <div class="form-container">
+        <h2>Вход в личный кабинет</h2>
 
-    <form method="POST" novalidate>
-        <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-        <label for="email">Email</label>
-        <input type="email" name="email" id="email" placeholder="Введите ваш email" required>
+        <?php if ($error): ?>
+            <div class='alert alert-danger'><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
 
-        <label for="password">Пароль</label>
-        <input type="password" name="password" id="password" placeholder="Введите ваш пароль" required>
+        <form method="POST" novalidate>
+            <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+            
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" name="email" id="email" class="form-control" placeholder="Введите ваш email" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label">Пароль</label>
+                <input type="password" name="password" id="password" class="form-control" placeholder="Введите пароль" required>
+            </div>
 
-        <button type="submit">Войти</button>
-    </form>
-    <div class="links">
-        <a href="index.php">← На главную</a>
-        <a href="register.php">Нет аккаунта? Зарегистрироваться</a>
+            <button type="submit" class="btn btn-primary">Войти</button>
+        </form>
+        <div class="links">
+            <a href="register.php">Нет аккаунта? Зарегистрироваться</a>
+        </div>
     </div>
 </body>
 </html>

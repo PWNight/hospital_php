@@ -1,0 +1,146 @@
+/* style.css - Минималистичное светлое оформление */
+
+/* Базовые стили */
+body {
+    background-color: #f8f9fa; /* Очень светлый серый фон */
+    color: #343a40; /* Темный текст */
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+}
+
+/* Навигация */
+.navbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e9ecef;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.navbar-brand, .nav-link {
+    color: #007bff !important; /* Синий акцент */
+    font-weight: 600;
+}
+.nav-link:hover {
+    color: #0056b3 !important;
+}
+.btn-primary, .btn-success {
+    background-color: #007bff;
+    border-color: #007bff;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.btn-primary:hover, .btn-success:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+.btn-outline-primary {
+    color: #007bff;
+    border-color: #007bff;
+}
+.btn-outline-primary:hover {
+    background-color: #007bff;
+    color: #ffffff;
+}
+
+/* Основной контент (Центрирование форм/страниц) */
+.main-content {
+    padding-top: 20px;
+    padding-bottom: 50px;
+    min-height: calc(100vh - 120px); /* Обеспечение минимальной высоты */
+}
+.card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+.card-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* Формы (Login/Register) */
+.form-container {
+    max-width: 450px;
+    margin: 60px auto;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+.form-container h2 {
+    color: #007bff;
+    font-weight: 700;
+    margin-bottom: 30px;
+    text-align: center;
+}
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+}
+.text-accent {
+    color: #007bff !important;
+}
+
+/* Страница index.php (Особенности) */
+.hero-section {
+    background-color: #f0f8ff; /* Очень светлый голубой фон для шапки */
+    padding: 80px 0;
+}
+.hero-section h1 {
+    font-weight: 700;
+    color: #007bff;
+}
+.hero-section p {
+    font-size: 1.15rem;
+}
+.feature-card {
+    padding: 25px;
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+.feature-card:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+}
+.icon-circle {
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    line-height: 60px;
+    border-radius: 50%;
+    background-color: #e6f2ff;
+    color: #007bff;
+    margin-bottom: 15px;
+}
+
+/* Футер */
+footer {
+    background-color: #ffffff;
+    border-top: 1px solid #e9ecef;
+    color: #6c757d;
+}
+
+/* Таблицы */
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+.table td, .table th {
+    vertical-align: middle;
+}
+
+/* Уведомления */
+.alert {
+    border-left: 5px solid;
+    border-radius: 0.25rem;
+}
+.alert-danger {
+    border-color: #dc3545;
+}
+.alert-success {
+    border-color: #28a745;
+}

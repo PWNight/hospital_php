@@ -1,6 +1,7 @@
 <?php
 // Разрешаем доступ к файлу и импортируем функции
 define('IN_APP', true);
+require_once 'utils/config.php'; // Добавлено, так как $pdo не определен без него
 require_once 'utils/functions.php';
 
 // Проверяем наличие авторизации
@@ -10,6 +11,7 @@ if (is_logged_in()) {
 }
 
 // Обьявляем переменные
+global $pdo; // Убедимся, что $pdo доступен
 $error = $success = '';
 
 // Если метод ПОСТ, то выполняем код авторизации
@@ -23,7 +25,7 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         $pass  = $_POST['password'] ?? '';
         $account_type = $_POST['type'] ?? '';
 
-        // Проверяем валидность полей
+        // Проверяем валидность общих полей
         if ( !$email ) {
             $error = "Некорректный email";
         } elseif ( !$account_type ){
@@ -43,24 +45,24 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
                 switch ($account_type) {
                     case "doctor":
                         // Получаем данные из формы
-                        $department = $_POST['department'] ?? '';
-                        $full_name = $_POST['doc_full_name'] ?? '';
-                        $position = $_POST['position'] ?? '';
-                        $phone_number = $_POST['doc_phone_number'] ?? '';
+                        $department = filter_var($_POST['department'] ?? '', FILTER_VALIDATE_INT);
+                        $doc_full_name = trim($_POST['doc_full_name'] ?? ''); // <-- Renamed for clarity
+                        $position = trim($_POST['position'] ?? '');
+                        $doc_phone_number = trim($_POST['doc_phone_number'] ?? ''); // <-- Renamed for clarity
 
-                        if ( !$department || !$full_name || !$position || !$phone_number ) {
+                        if ( !$department || !$doc_full_name || !$position || !$doc_phone_number ) { // <-- Updated validation
                             $error = 'Указаны не все данные врача';
                         }else{
-                            // Создаём новую учётку
+                            // 1. Создаём новую учётку
                             $stmt = $pdo->prepare("INSERT INTO users (email, password, created_at, type) VALUES (?, ?, NOW(), ?)");
                             $stmt->execute([$email, $hash, $account_type]);
                             $user_id = $pdo->lastInsertId();
 
-                            // Создаём запись врача
+                            // 2. Создаём запись врача
                             $stmt = $pdo->prepare("
                                 INSERT INTO doctors (fk_user, fk_department, full_name, position,
                                 email, phone_number) VALUES (?, ?, ?, ?, ?, ?)");
-                            $stmt->execute([$user_id, $department, $full_name, $position, $email, $phone_number]);
+                            $stmt->execute([$user_id, $department, $doc_full_name, $position, $email, $doc_phone_number]); // <-- Used new variables
 
                             // Переносим на страницу авторизации
                             header('Location: login.php');
@@ -69,24 +71,24 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
                         break;
                     case "patient":
                         // Получаем данные из формы
-                        $full_name = $_POST['pat_full_name'] ?? '';
-                        $birth_date = $_POST['birth_date'] ?? '';
-                        $home_address = $_POST['home_address'] ?? '';
-                        $phone_number = $_POST['pat_phone_number'] ?? '';
+                        $pat_full_name = trim($_POST['pat_full_name'] ?? ''); // <-- Renamed for clarity
+                        $birth_date = trim($_POST['birth_date'] ?? '');
+                        $home_address = trim($_POST['home_address'] ?? '');
+                        $pat_phone_number = trim($_POST['pat_phone_number'] ?? ''); // <-- Renamed for clarity
 
-                        if ( !$full_name || !$birth_date || !$home_address || !$phone_number ) {
+                        if ( !$pat_full_name || !$birth_date || !$home_address || !$pat_phone_number ) { // <-- Updated validation
                             $error = 'Указаны не все данные пациента';
                         }else{
-                            // Создаём новую учётку
+                            // 1. Создаём новую учётку
                             $stmt = $pdo->prepare("INSERT INTO users (email, password, created_at, type) VALUES (?, ?, NOW(), ?)");
                             $stmt->execute([$email, $hash, $account_type]);
                             $user_id = $pdo->lastInsertId();
 
-                            // Создаём запись пациента
+                            // 2. Создаём запись пациента
                             $stmt = $pdo->prepare("
                                 INSERT INTO patients (fk_user, full_name, birth_date, home_address,
                                 email, phone_number) VALUES (?, ?, ?, ?, ?, ?)");
-                            $stmt->execute([$user_id, $full_name, $birth_date, $home_address, $email, $phone_number]);
+                            $stmt->execute([$user_id, $pat_full_name, $birth_date, $home_address, $email, $pat_phone_number]); // <-- Used new variables
 
                             // Переносим на страницу авторизации
                             header('Location: login.php');
@@ -98,136 +100,150 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
         }
     }
 }
+
+// Фетчинг списка отделений для селекта
+$departments = [];
+if (isset($pdo)) {
+    $stmt = $pdo->prepare("SELECT id, name FROM departments ORDER BY name");
+    $stmt->execute();
+    $departments = $stmt->fetchAll();
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Регистрация</title>
+    <title>Регистрация — МедЦентр "Надежда"</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-        /* Общие стили */
-        body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f4f7f9; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);}
-        h2 {color: #17a2b8; text-align: center; margin-bottom: 25px;} /* Медицинский синий */
-        
-        /* Элементы формы */
-        input, select {
-            width: 100%; 
-            padding: 12px; 
-            margin: 8px 0 15px 0; 
-            box-sizing: border-box; 
-            border: 1px solid #ced4da; 
-            border-radius: 4px;
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        /* Минималистичный белый/синий дизайн */
+        :root {
+            --bs-primary: #007BFF;
+            --bs-primary-rgb: 0,123,255;
         }
-        button {
-            width: 100%; 
-            padding: 12px; 
-            margin: 15px 0 8px 0;
-            background: #17a2b8; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            font-weight: bold;
-            border-radius: 4px;
-            transition: background 0.3s;
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card-register {
+            max-width: 500px; 
+            margin: 50px auto; 
+            box-shadow: 0 8px 16px rgba(0,0,0,.08); 
+            border: none;
         }
-        button:hover {background: #138496;}
-
-        /* Уведомления */
-        .error {color: #dc3545; background: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb; margin-bottom: 15px;}
-        .success {color: #28a745; background: #d4edda; padding: 10px; border-radius: 4px; border: 1px solid #c3e6cb; margin-bottom: 15px;}
+        .btn-primary { background-color: var(--bs-primary); border-color: var(--bs-primary); }
+        .btn-primary:hover { background-color: #0056b3; border-color: #0056b3; }
+        .text-accent { color: var(--bs-primary) !important; }
         
-        /* Ссылки */
-        a {color: #17a2b8; text-decoration: none; display: block; text-align: center; margin-top: 10px;}
-        a:hover {text-decoration: underline;}
-
-        /* Специфические секции */
-        .form-section {padding: 15px; border: 1px dashed #ced4da; border-radius: 4px; margin-top: 15px; background: #ffffff;}
-        .form-section h3 {color: #6c757d; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 15px;}
+        .form-section { border: 1px dashed #ced4da; border-radius: 6px; padding: 15px; margin-top: 15px; background-color: #ffffff; }
     </style>
 </head>
 <body>
-    <h2>Регистрация</h2>
-    <?php if ( $error ) echo "<div class='error'>$error</div>"; ?>
-    <form method="POST" novalidate>
-        <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
-        <div>
-            <label for="email">Введите почту</label>
-            <input type="email" name="email" id="email" autocomplete="email" placeholder="Email" required autofocus>
+    <div class="card card-register">
+        <div class="card-body p-4 p-md-5">
+            <h2 class="card-title text-center text-accent mb-4 fw-bold">
+                <i class="fas fa-user-plus me-2"></i> Регистрация
+            </h2>
+            <?php if ( $error ): ?>
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i> <?= htmlspecialchars($error) ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" novalidate>
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+                
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" name="email" id="email" autocomplete="email" placeholder="email@example.com" required autofocus value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" class="form-control" name="password" id="password" placeholder="Пароль (мин. 8 символов)" minlength="8" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="type" class="form-label">Тип аккаунта</label>
+                    <select id="type" name="type" class="form-select" required>
+                        <option value="" disabled selected>Выберите тип аккаунта</option>
+                        <option value="doctor" <?= (($_POST['type'] ?? '') === 'doctor') ? 'selected' : '' ?>>Врач</option>
+                        <option value="patient" <?= (($_POST['type'] ?? '') === 'patient') ? 'selected' : '' ?>>Пациент</option>
+                    </select>
+                </div>
+
+                <div id="patient-form" class="form-section" style="display:<?= (($_POST['type'] ?? '') === 'patient') ? 'block' : 'none' ?>;">
+                    <h5 class="text-secondary"><i class="fas fa-hospital-user me-1"></i> Данные пациента</h5>
+                    <div class="mb-3">
+                        <label for="pat_full_name" class="form-label">ФИО</label>
+                        <input type="text" class="form-control" name="pat_full_name" id="pat_full_name" placeholder="Иванов Иван Иванович" value="<?= htmlspecialchars($_POST['pat_full_name'] ?? '') ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="birth_date" class="form-label">Дата рождения</label>
+                        <input type="date" class="form-control" name="birth_date" id="birth_date" value="<?= htmlspecialchars($_POST['birth_date'] ?? '') ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="home_address" class="form-label">Домашний адрес</label>
+                        <input type="text" class="form-control" name="home_address" id="home_address" placeholder="ул. Ленина, д. 5, кв. 10" value="<?= htmlspecialchars($_POST['home_address'] ?? '') ?>" required>
+                    </div>
+                    <div class="mb-0">
+                        <label for="pat_phone_number" class="form-label">Номер телефона</label>
+                        <input type="tel" class="form-control" name="pat_phone_number" id="pat_phone_number" placeholder="+7 999 123-45-67" value="<?= htmlspecialchars($_POST['pat_phone_number'] ?? '') ?>" required>
+                    </div>
+                </div>
+                
+                <div id="doctor-form" class="form-section" style="display:<?= (($_POST['type'] ?? '') === 'doctor') ? 'block' : 'none' ?>;">
+                    <h5 class="text-secondary"><i class="fas fa-user-md me-1"></i> Данные врача</h5>
+                    <div class="mb-3">
+                        <label for="doc_full_name" class="form-label">ФИО</label>
+                        <input type="text" class="form-control" name="doc_full_name" id="doc_full_name" placeholder="Петров Петр Петрович" value="<?= htmlspecialchars($_POST['doc_full_name'] ?? '') ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="department" class="form-label">Отделение</label>
+                        <select id="department" name="department" class="form-select" required>
+                            <option value="" disabled selected>Выберите отделение</option>
+                            <?php foreach( $departments as $department ) : ?>
+                                <option value="<?= $department['id'] ?>" <?= (($_POST['department'] ?? '') == $department['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($department["name"]) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="position" class="form-label">Должность</label>
+                        <input type="text" class="form-control" name="position" id="position" placeholder="Терапевт" value="<?= htmlspecialchars($_POST['position'] ?? '') ?>" required>
+                    </div>
+                    <div class="mb-0">
+                        <label for="doc_phone_number" class="form-label">Номер телефона</label>
+                        <input type="tel" class="form-control" name="doc_phone_number" id="doc_phone_number" placeholder="+7 999 123-45-67" value="<?= htmlspecialchars($_POST['doc_phone_number'] ?? '') ?>" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg mt-4">
+                    <i class="fas fa-check-circle me-1"></i> Зарегистрироваться
+                </button>
+            </form>
+            
+            <a href="login.php" class="d-block text-center mt-3 text-accent text-decoration-none">
+                <i class="fas fa-sign-in-alt me-1"></i> Уже есть аккаунт? Войти
+            </a>
         </div>
-        <div>
-            <label for="password">Введите пароль</label>
-            <input type="password" name="password" id="password" placeholder="Пароль (мин. 8 символов)" minlength="8" required>
-        </div>
-        <div>
-            <label for="type">Выберите тип аккаунта</label>
-            <select id="type" name="type">
-                    <option selected disabled>Выберите тип аккаунта</option>
-                    <option value="doctor">Врач</option>
-                    <option value="patient">Пациент</option>
-            </select>
-        </div>
-        <div id="patient-form" style="display:none;">
-            <div>
-                <label for="pat_full_name">Введите ФИО</label>
-                <input name="pat_full_name" id="pat_full_name" minlength="8" required>
-            </div>
-            <div>
-                <label for="birth_date">Введите дату рождения</label>
-                <input type="date" name="birth_date" id="birth_date" required>
-            </div>
-            <div>
-                <label for="home_address">Введите домашний адрес</label>
-                <input name="home_address" id="home_address" minlength="8" required>
-            </div>
-            <div>
-                <label for="pat_phone_number">Введите номер телефона</label>
-                <input type="tel" name="pat_phone_number" id="pat_phone_number" minlength="8" required>
-            </div>
-        </div>
-        <div id="doctor-form" style="display:none;">
-            <div>
-                <label for="doc_full_name">Введите ФИО</label>
-                <input name="doc_full_name" id="doc_full_name" minlength="8" required>
-            </div>
-            <div>
-                <label for="department">Выберите отдел</label>
-                <select id="department" name="department">
-                    <option selected disabled>Выберите отделение</option>
-                    <?php
-                        // Получаем список отделений
-                        $stmt = $pdo->prepare("SELECT id, name FROM departments");
-                        $stmt->execute();
-                        $departments = $stmt->fetchAll();
-                        foreach( $departments as $department ) {
-                            echo "<option value='".$department['id']."'>".$department["name"]."</option>";
-                        }
-                    ?>
-                </select>
-            </div>
-            <div>
-                <label for="position">Введите должность</label>
-                <input name="position" id="position" minlength="8" required>
-            </div>
-            <div>
-                <label for="doc_phone_number">Введите номер телефона</label>
-                <input type="tel" name="doc_phone_number" id="doc_phone_number" minlength="8" required>
-            </div>
-        </div>
-        <button type="submit">Зарегистрироваться</button>
-    </form>
-    <a href="login.php">Уже есть аккаунт? Войти</a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const select = document.getElementById("type")
-        select.addEventListener("change", function (){
-            var value = this.value;
-            if(value == "doctor"){
-                document.getElementById("doctor-form").style = "display:block;"
-                document.getElementById("patient-form").style = "display:none;"
-            }else{
-                document.getElementById("patient-form").style = "display:block;"
-                document.getElementById("doctor-form").style = "display:none;"
+        // JS для переключения форм
+        const selectType = document.getElementById("type");
+        const doctorForm = document.getElementById("doctor-form");
+        const patientForm = document.getElementById("patient-form");
+        
+        selectType.addEventListener("change", function (){
+            const value = this.value;
+            if(value === "doctor"){
+                doctorForm.style.display = "block";
+                patientForm.style.display = "none";
+            } else if (value === "patient") {
+                patientForm.style.display = "block";
+                doctorForm.style.display = "none";
             }
         });
     </script>
